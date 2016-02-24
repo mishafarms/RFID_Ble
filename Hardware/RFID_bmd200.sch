@@ -3856,11 +3856,15 @@ This is the mechanical footprint for a #4 phillips button head screw. Use the ke
 </net>
 <net name="N$4" class="0">
 <segment>
-<pinref part="IC2" gate="IC$1" pin="PA.08"/>
-<wire x1="-17.78" y1="48.26" x2="25.4" y2="48.26" width="0.1524" layer="91"/>
-<wire x1="25.4" y1="48.26" x2="25.4" y2="66.04" width="0.1524" layer="91"/>
 <pinref part="U1" gate="A" pin="P0.08"/>
 <wire x1="25.4" y1="66.04" x2="40.64" y2="66.04" width="0.1524" layer="91"/>
+<wire x1="25.4" y1="66.04" x2="25.4" y2="60.96" width="0.1524" layer="91"/>
+<wire x1="25.4" y1="60.96" x2="-7.874" y2="60.96" width="0.1524" layer="91"/>
+<pinref part="IC2" gate="IC$1" pin="PA.12"/>
+<wire x1="-17.78" y1="58.42" x2="-16.256" y2="58.42" width="0.1524" layer="91"/>
+<wire x1="-16.256" y1="58.42" x2="-16.256" y2="59.69" width="0.1524" layer="91"/>
+<wire x1="-16.256" y1="59.69" x2="-7.874" y2="59.69" width="0.1524" layer="91"/>
+<wire x1="-7.874" y1="60.96" x2="-7.874" y2="59.69" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$8" class="0">
