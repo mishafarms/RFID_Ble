@@ -1,10 +1,10 @@
 /**
   ******************************************************************************
-  * @file    RFID/usart.c 
+  * @file    RFID/button.c 
   * @author  Michael Weiss
   * @version V1.0.0
-  * @date    1/5/16
-  * @brief	 USART interface code
+  * @date    3/21/16
+  * @brief	 button interface code
   ******************************************************************************
   * @attention
   *
@@ -22,36 +22,19 @@
 #include "rfid.h"
 
 /**************************************************************************************/
-  
-void ledOff(void)
-{
-	GPIO_SetBits(GPIOA, GPIO_Pin_1);
-}
-
-void ledOn(void)
-{
-	GPIO_ResetBits(GPIOA, GPIO_Pin_1);
-}
 
 uint8_t Button_State(void)
 {
+#if 0
+	return(1);
+#else
 	return GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0);
+#endif
 }
 
 void Button_Config(void)
 {
 	GPIO_InitTypeDef   GPIO_InitStructure;
-
-	/* Configure PA.01 pin as output push-pull */
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-	// set LED on
-
-	ledOn();
 
 	/* Configure PA.00 pin as input pulldown */
 	/* this is the button and wakeup */

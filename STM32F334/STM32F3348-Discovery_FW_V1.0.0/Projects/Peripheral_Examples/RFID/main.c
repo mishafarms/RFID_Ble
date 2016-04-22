@@ -39,16 +39,23 @@
 /* Private typedef -----------------------------------------------------------*/  
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
+
+#define RFID_EN() GPIO_ResetBits(GPIOB, GPIO_Pin_3)
+#define RFID_DIS() GPIO_SetBits(GPIOB, GPIO_Pin_3)
+#define RFID_IS_EN() (GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_3) == 0)
+
 /* Private variables ---------------------------------------------------------*/
 static __IO uint32_t TickCounter;
 /* Private function prototypes -----------------------------------------------*/
 
 void GPIO_Configuration(void);
+void EXTI_Config(void);
 
 /* Private functions ---------------------------------------------------------*/
 
 int testMe = 0;
 char sentStr[32] = "";  // I know the string cannot be 32 bytes
+uint8_t goodStr = FALSE;
 
 /**
   * @brief   Main program
@@ -129,13 +136,21 @@ if (SysTick_Config(SystemCoreClock / 1000))
 	
 	Button_Config();
 	
+	Led_Config();
+
+	// now that everything else is setup, configure and enable interrupts
+	
+	EXTI_Config();
+	
 	/* Infinite loop */
 	
-	while (1)
-	{
-		USART1_SendStr("Hello World\n");
-		Delay(1000);
-	}
+//	while (1)
+//	{
+//		USART1_SendStr("Hello World\n");
+//		Delay(1000);
+//	}
+
+//	SEGGER_RTT_printf(0, "We have started the main loop\r\n");
 
 	while (1)
 	{
@@ -147,31 +162,51 @@ if (SysTick_Config(SystemCoreClock / 1000))
 			
 			ButtonReleasedTime = 0;
 
-			// it also means that the RFID chip should be awake and scanning */
+			if (!RFID_IS_EN())
+			{
+				// it also means that the RFID chip should be awake and scanning */
 			
+				RFID_EN();   //enable the chip
+				Led_Set_Cycle(LED_FAST_CYCLE);
+				Delay(100);  // wait 1/10 of a second
+			}
+				
 			// see if we can find an RFID chip and read it in ISO 11784/11785 format
-			
+
 			animalStr = AnimalCapture();
 	  
 			if (animalStr != (char *) NULL)
 			{
+//				SEGGER_RTT_printf(0, "Read code %s\r\n", animalStr);
+				
 				// is it the same as the last RFID chip read?
 				// if not then send it 
 				
-				if (strcmp(animalStr, sentStr) != 0)
+//				if (strcmp(animalStr, sentStr) != 0)
 				{
 					USART1_SendStr(animalStr);
 					
 					// this is now the last RFID chip read
 					
-					strcpy(sentStr, animalStr);
+//					strcpy(sentStr, animalStr);
+					goodStr = TRUE;
+					Led_Set(LED_GREEN);
+					
+					// wait for button release
+					while (Button_State())
+							;
 				}
+//				else
+//				{
+//					Led_Set_Temp(LED_YELLOW, 500);
+//				}
 			}
 			else
 			{
 				// I think not reading the value means they moved the RFID chip out of range
 				// if they move it back in, they want to see it again
 				
+//				SEGGER_RTT_printf(0, "Didn't read code\r\n");
 				sentStr[0] = '\0';
 			}
 		}
@@ -187,6 +222,10 @@ if (SysTick_Config(SystemCoreClock / 1000))
 				ButtonReleasedTime = TickCounter;
 
 				// it also means that the RFID chip should be put to sleep, in  nice way */
+
+				RFID_DIS();
+				Led_Set_Cycle(LED_SLOW_CYCLE);
+				goodStr = FALSE;
 			}
 			else if (TickCounter >= (ButtonReleasedTime + SLEEP_TIMEOUT))
 			{
@@ -223,7 +262,33 @@ void RCC_Configuration(void)
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
   RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
 }
-	
+
+void EXTI_Config(void)
+{
+  EXTI_InitTypeDef   EXTI_InitStructure;
+  NVIC_InitTypeDef   NVIC_InitStructure;
+
+	/* Enable SYSCFG clock */
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+  
+  /* Connect EXTI0 Line to PA0 pin */
+  SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOB, EXTI_PinSource1);
+
+  /* Configure EXTI0 line */
+  EXTI_InitStructure.EXTI_Line = EXTI_Line1;
+  EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
+  EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+  EXTI_Init(&EXTI_InitStructure);
+
+  /* Enable and set EXTI0 Interrupt to the lowest priority */
+  NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0F;
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0F;
+  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_Init(&NVIC_InitStructure);
+}
+
 void GPIO_Configuration(void)
 {
 	GPIO_InitTypeDef   GPIO_InitStructure;
@@ -260,7 +325,7 @@ void GPIO_Configuration(void)
 	/* set SHD initial state as LOW, for now, This will need to be disabled when we go to sleep. */
 	/* actually this should only be LOW when the button is pressed (looking for tags). */
 	
-	GPIO_ResetBits(GPIOB, GPIO_Pin_3);
+	GPIO_SetBits(GPIOB, GPIO_Pin_3);
 	
 	/* Configure PA.15 pin as output push-pull (MOD) */
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
@@ -275,20 +340,14 @@ void GPIO_Configuration(void)
 }
 
 void Timing_Tick(void)
-{
-	extern void ledOn(void);
-	extern void ledOff(void);
-	
+{	
 	TickCounter++;
-	
-	if((TickCounter % 1000) == 0)
-	{
-		ledOn();
-	}
-	else if((TickCounter % 1000) == 500)
-	{
-		ledOff();
-	}
+	Led_Tick();
+}
+
+uint32_t getTick(void)
+{
+	return TickCounter;
 }
 
 /**
@@ -300,7 +359,11 @@ void Delay(__IO uint32_t nTime)
 
 {
   uint32_t TimingDelay = TickCounter + nTime;
-  
+ 
+	// We will assume that the timer is not done yet
+	
+	timerDone = FALSE;
+	
   while(TickCounter < TimingDelay)
   {
 	  if(timerDone)

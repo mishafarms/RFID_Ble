@@ -32,6 +32,7 @@
 
 extern void Timing_Tick(void);
 extern void Button_Handler(void);
+extern void Ble_Led_Flash(void);
 
 /** @addtogroup STM32F3348_DISCOVERY_Examples
   * @{
@@ -159,11 +160,24 @@ void SysTick_Handler(void)
 }
 
 /**
-  * @brief  This function handles EXTI1 which is connected to our Button.
+  * @brief  This function handles EXTI1 which is connected to the BLE led pin.
   * @param  None
   * @retval None
   */
 
+
+void EXTI1_IRQHandler(void)
+{
+  if ((EXTI_GetITStatus(EXTI_Line1) == SET)) 
+  {
+		// we should call a function to figure out if it is flashing or just on
+		
+		Ble_Led_Flash();
+    
+    /* Clear the EXTI line 0 pending bit */
+    EXTI_ClearITPendingBit(EXTI_Line1);
+  }    
+}
 /******************************************************************************/
 /*                 STM32F3xx Peripherals Interrupt Handlers                   */
 /*  Add here the Interrupt Handler for the used peripheral(s) (PPP), for the  */

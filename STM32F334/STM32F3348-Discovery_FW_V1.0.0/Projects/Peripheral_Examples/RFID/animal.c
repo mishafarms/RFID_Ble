@@ -281,7 +281,7 @@ char *AnimalCapture(void)
 		str = AnimalString();
 	}
 
-	return "935-0000045135\n";
+//	return "935-0000045135\n";
 	return str; 
 } 
  

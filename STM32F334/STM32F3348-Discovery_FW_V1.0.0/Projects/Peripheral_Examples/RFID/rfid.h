@@ -33,6 +33,7 @@
 
 #include "main.h"
 #include <string.h>
+#include "SEGGER_RTT.h"
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
@@ -44,8 +45,8 @@
 #define FALSE (0)
 #define TRUE (!FALSE)
 
-//#define SLEEP_TIMEOUT  (1000 * 60 * 2)   // 2 minutes in milliseconds
-#define SLEEP_TIMEOUT  (1000 *10)   // 30 seconds in milliseconds
+#define SLEEP_TIMEOUT  (1000 * 60 * 2)   // 2 minutes in milliseconds
+//#define SLEEP_TIMEOUT  (1000 * 10)   // 30 seconds in milliseconds
 
 /* There will be more if I decide to support other formats (likely) */
 
@@ -66,6 +67,30 @@ extern void Button_Config(void);
 extern void Button_Handler(void);
 extern uint8_t Button_State(void);
 extern void Sleep_Button_Press(void);
+
+/* led.c */
+
+#define LED_BLACK  0
+#define LED_BLUE   1
+#define LED_GREEN  2
+#define LED_CYAN   3
+#define LED_RED    4
+#define LED_PURPLE 5
+#define LED_YELLOW 6
+#define LED_WHITE  7
+
+#define LED_FAST_CYCLE 400
+#define LED_SLOW_CYCLE 800
+
+extern void Led_Config(void);
+extern void Led_Tick(void);
+extern void Led_Set(uint8_t color);
+extern void Led_Set_Cycle(uint32_t time);
+extern uint8_t Led_Set_Temp(uint8_t color, uint32_t time);
+extern uint8_t Led_Off(void);
+extern uint8_t Led_On(void);
+
+extern void Ble_Led_Flash(void);
 
 /* timer.c */
 
@@ -97,6 +122,8 @@ extern __IO uint8_t currentMaxTimeHi;
 
 extern void biPhaseCapture(uint32_t, uint32_t);
 extern __IO uint32_t timerDone;
+extern uint32_t getTick(void);
+extern uint8_t goodStr;
 
 #endif /* __RFID_H */
 
